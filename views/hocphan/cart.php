@@ -91,7 +91,7 @@ require_once 'views/layout/header.php'; // Ensure header is updated
 
         <?php if (!empty($cartItems) && is_array($cartItems)): ?>
         <div class="card-footer bg-light">
-            <form method="post" action="index.php?controller=hocphan&action=processCart"> <!-- Single form for cart actions -->
+            <form method="post"> <!-- Single form for cart actions -->
                 <div class="d-flex justify-content-between align-items-center flex-wrap"> <!-- flex-wrap for smaller screens -->
                     <button type="submit" name="clear" class="btn btn-outline-danger mb-2 mb-md-0"
                             onclick="return confirm('Bạn có chắc muốn xóa TOÀN BỘ học phần khỏi giỏ hàng?')">

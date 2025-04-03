@@ -98,7 +98,7 @@ require_once 'views/layout/header.php';
                                              <i class="fas fa-shopping-cart"></i>
                                          </a>
                                     <?php elseif ($isAvailable): ?>
-                                        <form method="post" action="index.php?controller=hocphan&action=addToCart" style="display:inline-block;">
+                                        <form method="post" action="index.php?controller=hocphan&action=cart" style="display:inline-block;">
                                             <input type="hidden" name="MaHP" value="<?php echo htmlspecialchars($hp['MaHP'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                                             <input type="hidden" name="TenHP" value="<?php echo htmlspecialchars($hp['TenHP'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                                             <input type="hidden" name="SoTinChi" value="<?php echo htmlspecialchars($hp['SoTinChi'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
