@@ -1,0 +1,21 @@
+digraph INFRA {
+  node [ color = "black", fillcolor = "#E6E6E6", height =1, style = "filled,bold,rounded", fontname = "Arial" ];
+  "ml-autoscaling-template" [ label = "ml-autoscaling-template
+(AWS::EC2::LaunchTemplate)", shape =rectangle, fillcolor = "#B7E0FF" ];
+  "ml-predictive-asg" [ label = "ml-predictive-asg
+(AWS::AutoScaling::AutoScalingGroup)", shape =rectangle, fillcolor = "#B7E0FF" ];
+  "ML-ASG-HighCPU" [ label = "ML-ASG-HighCPU
+(AWS::CloudWatch::Alarm)", shape =rectangle ];
+  "ml-autoscaling-sg" [ label = "ml-autoscaling-sg
+(AWS::EC2::SecurityGroup)", shape =rectangle ];
+  "EC2-CloudWatch-Role" [ label = "EC2-CloudWatch-Role
+(AWS::IAM::Role)", shape =rectangle ];
+  "EC2-CloudWatch-Policy" [ label = "EC2-CloudWatch-Policy
+(AWS::IAM::Policy)", shape =rectangle ];
+  "EC2-CloudWatch-InstanceProfile" [ label = "EC2-CloudWatch-InstanceProfile
+(AWS::IAM::InstanceProfile)", shape =rectangle ];
+  "ml-predictive-asg" -> "ml-autoscaling-template";
+  "ML-ASG-HighCPU" -> "ml-predictive-asg";
+  "EC2-CloudWatch-Policy" -> "EC2-CloudWatch-Role";
+  "EC2-CloudWatch-InstanceProfile" -> "EC2-CloudWatch-Role";
+}
