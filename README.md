@@ -1,165 +1,181 @@
-# ML Auto Scaling với Predictive Scaling
+# ML-Based Auto Scaling System for AWS Infrastructure
 
-Dự án xây dựng hệ thống Auto Scaling thông minh sử dụng Machine Learning để dự đoán traffic patterns và scale proactively.
+A machine learning-powered auto scaling solution that predicts and proactively adjusts AWS EC2 instance capacity based on historical usage patterns. This system combines ARIMA and LSTM models to provide accurate scaling predictions while maintaining optimal resource utilization and cost efficiency.
 
-## Cấu trúc Project
+The project implements a complete ML pipeline from data generation to model deployment, with a REST API for predictions and direct integration with AWS Auto Scaling Groups. It features both predictive and reactive scaling capabilities, allowing for A/B testing to validate the effectiveness of ML-based scaling compared to traditional threshold-based approaches.
 
+## Repository Structure
 ```
 ml-autoscaling/
-├── data/                 # Dữ liệu và data generation
-├── models/              # ML models (LSTM, ARIMA)
-├── api/                 # Prediction API
-├── aws/                 # AWS integration
-├── tests/               # A/B testing
-└── docs/                # Documentation
+├── api/                      # API implementation for serving predictions
+│   └── prediction_api.py     # Flask API with ARIMA and LSTM prediction endpoints
+├── aws/                      # AWS infrastructure and integration code
+│   ├── autoscaling_integration.py    # Core auto scaling logic
+│   ├── create_iam_role.py           # IAM role setup for EC2 instances
+│   ├── create_security_group.py     # Security group configuration
+│   └── setup_infrastructure.py      # AWS infrastructure provisioning
+├── data/
+│   └── data_generator.py    # Synthetic training data generation
+├── models/                  # ML model implementations
+│   ├── arima_model.py      # ARIMA time series model
+│   └── lstm_model.py       # LSTM deep learning model
+├── tests/
+│   └── ab_testing.py       # A/B testing framework for scaling strategies
+└── deploy_to_ec2.py        # EC2 deployment automation script
 ```
 
-## Yêu cầu hệ thống
+## Usage Instructions
+### Prerequisites
+- Python 3.8 or higher
+- AWS account with appropriate permissions
+- AWS CLI configured with credentials
+- Boto3 (AWS SDK for Python)
+- TensorFlow 2.x
+- Flask
+- Pandas, NumPy, scikit-learn
+- statsmodels
 
-- Python 3.8+
-- AWS Account với appropriate permissions
-- 4GB RAM (cho training models)
+### Installation
 
-## Cài đặt
-
-1. **Clone và setup environment:**
 ```bash
+# Clone the repository
+git clone <repository-url>
 cd ml-autoscaling
+
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate  # Linux/MacOS
+venv\Scripts\activate     # Windows
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-2. **Configure AWS credentials:**
+### Quick Start
+1. Generate training data:
 ```bash
-aws configure
+python data/data_generator.py
 ```
 
-3. **Generate training data:**
+2. Set up AWS infrastructure:
 ```bash
-cd data
-python data_generator.py
+# Create security group
+python aws/create_security_group.py
+
+# Create IAM role
+python aws/create_iam_role.py
+
+# Set up infrastructure
+python aws/setup_infrastructure.py
 ```
 
-## Hướng dẫn sử dụng (3 tuần)
-
-### Tuần 1: Setup và Data
-
-1. **Tạo dữ liệu training:**
+3. Run the demo:
 ```bash
-cd data
-python data_generator.py
+python run_demo.py
 ```
 
-2. **Setup AWS infrastructure:**
-```bash
-cd aws
-# Chỉnh sửa security group IDs trong setup_infrastructure.py
-python setup_infrastructure.py
+### More Detailed Examples
+
+1. Training models separately:
+```python
+from models.lstm_model import LSTMPredictor
+from models.arima_model import ARIMAPredictor
+
+# Train LSTM model
+lstm_model = LSTMPredictor()
+lstm_model.train(data, epochs=50)
+
+# Train ARIMA model
+arima_model = ARIMAPredictor()
+arima_model.train(data)
 ```
 
-### Tuần 2: Training Models
+2. Making predictions:
+```python
+# Get predictions from API
+import requests
 
-1. **Train ARIMA model:**
-```bash
-cd models
-python arima_model.py
+response = requests.post('http://localhost:5000/predict/combined', 
+                        json={'steps': 6})
+predictions = response.json()['predictions']
 ```
 
-2. **Train LSTM model:**
-```bash
-cd models
-python lstm_model.py
+### Troubleshooting
+
+1. API Connection Issues
+- Error: "Connection refused"
+  - Check if API is running: `curl http://localhost:5000/health`
+  - Verify security group allows port 5000
+  - Check EC2 instance status
+
+2. AWS Infrastructure Issues
+- Error: "An error occurred (UnauthorizedOperation)"
+  - Verify AWS credentials are configured
+  - Check IAM permissions
+  - Run `aws configure` to set up credentials
+
+3. Model Training Issues
+- Error: "Not enough memory"
+  - Reduce batch size in LSTM training
+  - Use smaller training dataset
+  - Increase EC2 instance size
+
+## Data Flow
+The system processes metrics data through ML models to predict future resource requirements and automatically adjust EC2 instance capacity.
+
+```ascii
+Metrics Collection → ML Processing → Prediction → Auto Scaling
+[CloudWatch] → [ARIMA/LSTM] → [API] → [ASG Update]
 ```
 
-3. **Start Prediction API:**
+Component Interactions:
+1. CloudWatch collects EC2 metrics every 5 minutes
+2. ML models process historical data to generate predictions
+3. Prediction API combines model outputs for final scaling decisions
+4. Auto Scaling Integration updates ASG capacity based on predictions
+5. Security groups control access between components
+6. IAM roles manage component permissions
+
+## Infrastructure
+
+![Infrastructure diagram](./docs/infra.svg)
+
+AWS Resources:
+- EC2:
+  - Launch Template: ml-autoscaling-template
+  - Security Group: ml-autoscaling-sg
+  - IAM Role: EC2-CloudWatch-Role
+- Auto Scaling:
+  - Auto Scaling Group: ml-predictive-asg
+  - Scaling Policies: CPU-based fallback
+- CloudWatch:
+  - Alarms: ML-ASG-HighCPU
+  - Metrics: CPUUtilization
+
+## Deployment
+
+Prerequisites:
+- AWS CLI installed and configured
+- Security group created
+- IAM role configured
+
+Deployment Steps:
+1. Create AWS infrastructure:
 ```bash
-cd api
-python prediction_api.py
+python aws/setup_infrastructure.py
 ```
 
-### Tuần 3: Integration và Testing
-
-1. **Test API endpoints:**
+2. Deploy prediction API:
 ```bash
-# Test health check
-curl http://localhost:5000/health
-
-# Test ARIMA prediction
-curl -X POST http://localhost:5000/predict/arima -H "Content-Type: application/json" -d '{"steps": 24}'
+python deploy_to_ec2.py
 ```
 
-2. **Run A/B testing:**
+3. Start auto scaling integration:
 ```bash
-cd tests
-python ab_testing.py
+python aws/autoscaling_integration.py
 ```
 
-3. **Start predictive scaling:**
-```bash
-cd aws
-# Chỉnh sửa ASG name trong autoscaling_integration.py
-python autoscaling_integration.py
-```
-
-## API Endpoints
-
-- `GET /health` - Health check
-- `POST /predict/arima` - ARIMA predictions
-- `POST /predict/lstm` - LSTM predictions  
-- `POST /predict/combined` - Ensemble predictions
-
-## Metrics và Monitoring
-
-### Accuracy Metrics
-- **MAE (Mean Absolute Error)**: Độ chính xác trung bình
-- **RMSE (Root Mean Square Error)**: Độ lệch chuẩn
-- **MAPE (Mean Absolute Percentage Error)**: Phần trăm sai số
-
-### Cost Optimization
-- **Cost Savings**: So sánh chi phí predictive vs reactive
-- **Resource Utilization**: Hiệu quả sử dụng instances
-- **Over/Under Provisioning**: Tỷ lệ cung cấp thừa/thiếu
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Model training fails:**
-   - Kiểm tra data format
-   - Đảm bảo đủ RAM (4GB+)
-
-2. **API connection errors:**
-   - Kiểm tra port 5000 available
-   - Verify model files exist
-
-3. **AWS permissions:**
-   - Cần quyền EC2, AutoScaling, CloudWatch
-   - Kiểm tra security groups
-
-### Debug Commands
-
-```bash
-# Check API status
-curl http://localhost:5000/health
-
-# Test model loading
-python -c "from models.arima_model import ARIMAPredictor; print('OK')"
-
-# Verify AWS credentials
-aws sts get-caller-identity
-```
-
-## Kết quả mong đợi
-
-- **Cost Savings**: 15-25% so với reactive scaling
-- **Performance**: Giảm 30-40% under-provisioning
-- **Accuracy**: MAPE < 15% cho predictions 6h
-
-## Tài liệu tham khảo
-
-- [AWS Auto Scaling Documentation](https://docs.aws.amazon.com/autoscaling/)
-- [TensorFlow Time Series Guide](https://www.tensorflow.org/tutorials/structured_data/time_series)
-- [ARIMA Model Documentation](https://www.statsmodels.org/stable/generated/statsmodels.tsa.arima.model.ARIMA.html)
-
-## Liên hệ
-
-Nếu có vấn đề, tạo issue trong repository hoặc liên hệ qua email.
+Monitor deployment:
+- Check EC2 instance status in AWS Console
+- Verify API health: `curl http://<ec2-ip>:5000/health`
+- Monitor CloudWatch metrics for scaling activities
